@@ -1,1 +1,1 @@
-faszlib
+jzlib-ng
