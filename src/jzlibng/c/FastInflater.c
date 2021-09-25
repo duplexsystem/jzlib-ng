@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <../../../../../../../zlib-ng/zlib.h>
+#include <zlib.h>
 #include <dlfcn.h>
 
 #define DEF_MEM_LEVEL 8
@@ -66,7 +66,7 @@ static jint throwException(JNIEnv *env, char *className, char *message) {
     return (*env)->ThrowNew( env, exClass, message );
 }
 
-JNIEXPORT void JNICALL Java_com_bluedevel_zlib_FastDeflater_initIDs
+JNIEXPORT void JNICALL Java_com_bluedevel_zlib_FastInflater_initIDs
   (JNIEnv *env, jclass cls, jstring libname) {
       const char *str = (*env)->GetStringUTFChars(env, libname, 0);
       void *libz = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
@@ -99,6 +99,7 @@ JNIEXPORT void JNICALL Java_com_bluedevel_zlib_FastDeflater_initIDs
       lenID = (*env)->GetFieldID(env, cls, "len", "I");
 }
 
+/*
 JNIEXPORT jlong JNICALL Java_com_bluedevel_zlib_FastDeflater_init
   (JNIEnv *env, jclass clazz, jint level, jint strategy, jboolean nowrap) {
     z_stream *strm = calloc(1, sizeof(z_stream));
@@ -210,7 +211,7 @@ JNIEXPORT jint JNICALL Java_com_bluedevel_zlib_FastDeflater_deflateBytes
         switch (res) {
         case Z_STREAM_END:
             (*env)->SetBooleanField(env, this, finishedID, JNI_TRUE);
-            /* fall through */
+            // fall through
         case Z_OK:
             this_off += this_len - strm->avail_in;
             (*env)->SetIntField(env, this, offID, this_off);
@@ -240,3 +241,4 @@ JNIEXPORT void JNICALL Java_com_bluedevel_zlib_FastDeflater_end
         free((z_stream *) (addr));
     }
   }
+*/
