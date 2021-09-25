@@ -23,7 +23,7 @@
  * questions.
  */
 
-package io.github.duplexsystem.zlib;
+package io.github.duplexsystem.jzlibng;
 
 /**
  * A reference to the native zlib's z_stream structure.

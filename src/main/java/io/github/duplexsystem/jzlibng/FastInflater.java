@@ -1,4 +1,4 @@
-package io.github.duplexsystem.zlib;
+package io.github.duplexsystem.jzlibng;
 
 
 import java.util.zip.DataFormatException;

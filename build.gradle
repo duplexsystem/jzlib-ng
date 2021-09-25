@@ -13,6 +13,62 @@ dependencies {
 
 }
 
+task resetZlibNG() {
+    doLast {
+        exec {
+            workingDir 'zlib-ng'
+
+            commandLine 'git', 'reset', '--hard', 'origin/stable'
+        }
+    }
+}
+
+task patchZlibNG() {
+    dependsOn resetZlibNG
+    doLast {
+        exec {
+            workingDir 'zlib-ng'
+
+            commandLine 'git', 'apply', '--ignore-whitespace', '../zlib-ng-patches/0001-jlibz-ng-changes.patch'
+        }
+    }
+}
+
+task configZlibNG() {
+    dependsOn patchZlibNG
+    doLast {
+        exec {
+            workingDir 'zlib-ng'
+
+            commandLine 'cmake', '.', '-DZLIB_COMPAT=true', '-DZLIB_ENABLE_TESTS=false'
+        }
+    }
+}
+
+task buildZlibNG() {
+    dependsOn configZlibNG
+    doLast {
+        exec {
+            workingDir 'zlib-ng'
+
+            commandLine 'cmake', '--build', '.', '--config', 'Release'
+        }
+    }
+}
+
+task copyZlibNG() {
+    dependsOn buildZlibNG
+    doLast {
+        copy {
+            from 'zlib-ng/bin'
+            into 'src/main/resources/native'
+        }
+    }
+
+}
+
+
+
 test {
     useJUnitPlatform()
 }

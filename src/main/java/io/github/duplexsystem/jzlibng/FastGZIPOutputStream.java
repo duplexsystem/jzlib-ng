@@ -1,4 +1,4 @@
-package io.github.duplexsystem.zlib;
+package io.github.duplexsystem.jzlibng;
 
 import java.io.IOException;
 import java.io.OutputStream;

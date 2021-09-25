@@ -23,7 +23,7 @@
  * questions.
  */
 
-package io.github.duplexsystem.zlib;
+package io.github.duplexsystem.jzlibng;
 
 import java.io.FilterOutputStream;
 import java.io.OutputStream;

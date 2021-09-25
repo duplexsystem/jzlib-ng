@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package io.github.duplexsystem.zlib;
+package io.github.duplexsystem.jzlibng;
 
 import java.io.*;
 import java.util.zip.GZIPInputStream;

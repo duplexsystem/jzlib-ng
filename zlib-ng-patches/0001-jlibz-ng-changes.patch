@@ -1,0 +1,90 @@
+From e139e12319b6b38f0a52aba72780b603e4204136 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zo=C3=AB?= <duplexsys@protonmail.com>
+Date: Fri, 24 Sep 2021 22:19:31 -0500
+Subject: [PATCH 1/1] jlibz-ng changes
+
+---
+ CMakeLists.txt    | 17 ++++++++++++++---
+ win32/zlib-ng1.rc |  4 ++--
+ win32/zlib1.rc    |  4 ++--
+ 3 files changed, 18 insertions(+), 7 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7d99ec3..05f3b1d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -8,6 +8,17 @@ message(STATUS "Using CMake version ${CMAKE_VERSION}")
+ 
+ set(CMAKE_MACOSX_RPATH 1)
+ 
++#begin jzlib-ng changes
++find_program(CLANG_FOUND clang)
++
++if(CLANG_FOUND)
++    set(CMAKE_C_COMPILER "${CLANG_FOUND}" CACHE BOOL "" FORCE)
++endif()
++message(STATUS "Using C Compiler ${CMAKE_C_COMPILER}")
++
++set(CMAKE_LIBRARY_OUTPUT_DIRECTORY bin CACHE BOOL "" FORCE)
++#end jzlib-ng changes
++
+ # If not specified on the command line, enable C99 as the default
+ # Configuration items that affect the global compiler environment standards
+ # should be issued before the "project" command.
+@@ -1025,10 +1036,10 @@ if(NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
+ 
+     if(ZLIB_COMPAT)
+         set(ZLIB_FULL_VERSION ${ZLIB_HEADER_VERSION}.zlib-ng)
+-        set_target_properties(zlib PROPERTIES SOVERSION 1)
++        #set_target_properties(zlib PROPERTIES SOVERSION 1) #commented out by jzlib-ng
+     else()
+         set(ZLIB_FULL_VERSION ${ZLIBNG_HEADER_VERSION})
+-        set_target_properties(zlib PROPERTIES SOVERSION 2)
++        #set_target_properties(zlib PROPERTIES SOVERSION 2) #commented out by jzlib-ng
+     endif()
+ 
+     if(NOT CYGWIN)
+@@ -1039,7 +1050,7 @@ if(NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
+         #
+         # This has no effect with MSVC, on that platform the version info for
+         # the DLL comes from the resource file win32/zlib1.rc
+-        set_target_properties(zlib PROPERTIES VERSION ${ZLIB_FULL_VERSION})
++        #set_target_properties(zlib PROPERTIES VERSION ${ZLIB_FULL_VERSION}) #commented out by jzlib-ng
+     endif()
+ 
+     if(UNIX)
+diff --git a/win32/zlib-ng1.rc b/win32/zlib-ng1.rc
+index b539069..669ba3f 100644
+--- a/win32/zlib-ng1.rc
++++ b/win32/zlib-ng1.rc
+@@ -25,9 +25,9 @@ BEGIN
+     BEGIN
+       VALUE "FileDescription",	"zlib data compression library\0"
+       VALUE "FileVersion",	ZLIBNG_VERSION "\0"
+-      VALUE "InternalName",	"zlib-ng1.dll\0"
++      VALUE "InternalName",	"libz.dll\0"
+       VALUE "LegalCopyright",	"(C) 1995-2013 Jean-loup Gailly & Mark Adler\0"
+-      VALUE "OriginalFilename",	"zlib-ng1.dll\0"
++      VALUE "OriginalFilename",	"libz.dll\0"
+       VALUE "ProductName",	"zlib\0"
+       VALUE "ProductVersion",	ZLIBNG_VERSION "\0"
+       VALUE "Comments",		"For more information visit https://www.zlib.net/\0"
+diff --git a/win32/zlib1.rc b/win32/zlib1.rc
+index 11be5f4..53e002c 100644
+--- a/win32/zlib1.rc
++++ b/win32/zlib1.rc
+@@ -25,9 +25,9 @@ BEGIN
+     BEGIN
+       VALUE "FileDescription",	"zlib data compression library\0"
+       VALUE "FileVersion",	ZLIB_VERSION "\0"
+-      VALUE "InternalName",	"zlib1.dll\0"
++      VALUE "InternalName",	"libz.dll\0"
+       VALUE "LegalCopyright",	"(C) 1995-2013 Jean-loup Gailly & Mark Adler\0"
+-      VALUE "OriginalFilename",	"zlib1.dll\0"
++      VALUE "OriginalFilename",	"libz.dll\0"
+       VALUE "ProductName",	"zlib\0"
+       VALUE "ProductVersion",	ZLIB_VERSION "\0"
+       VALUE "Comments",		"For more information visit https://www.zlib.net/\0"
+-- 
+2.32.0
+
