@@ -103,7 +103,7 @@ model {
     }
 }
 
-assemble.dependsOn 'copyZlibNG'
+processResources.dependsOn 'copyZlibNG'
 copyZlibNG.dependsOn 'jzlibngSharedLibrary'
 copyZlibNG.doLast{
     copy {
