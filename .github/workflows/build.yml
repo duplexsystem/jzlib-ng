@@ -1,0 +1,51 @@
+name: jzlib-ng Build Script
+
+on:
+  push: {}
+  pull_request: {}
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 16
+      uses: actions/setup-java@v1
+      with:
+        java-version: 16
+        
+    - name: Set up Clang
+      uses: egor-tensin/setup-clang@v1
+      with:
+        version: latest
+        platform: x64
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ./.gradle/loom-cache
+        key: ${{ runner.os }}-gradle3-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle3-
+        
+    - name: Init Submodules
+      run: |
+        git submodule update --init
+        
+    - name: Build jzlib-ng
+      run: |
+        ./gradlew clean build --stacktrace
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: jzlib-ng-artifact
+        path: '**/build/libs/*.jar'
+      
