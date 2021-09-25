@@ -70,10 +70,6 @@ public class FastDeflater {
     public static void initLibs(Path rootPath) {
         try {
             JNIUtils.loadLib("libjzlibng", rootPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
             initIDs(JNIUtils.loadLib("libz", rootPath));
         } catch (IOException e) {
             e.printStackTrace();
