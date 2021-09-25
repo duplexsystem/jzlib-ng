@@ -12,7 +12,7 @@ public final class OSUtils
         return OS;
     }
 
-    public String getOS() {
+    public static String getOS() {
         if (OS != null) return OS;
         else if (isOS("windows")) return OS = "windows";
         else if (isOS("linux")) return OS = "linux";

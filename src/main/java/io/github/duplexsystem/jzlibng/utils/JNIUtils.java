@@ -1,5 +1,6 @@
 package io.github.duplexsystem.jzlibng.utils;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -9,22 +10,43 @@ import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JNIUtils {
     private static final Map OSLIBEXTMAP = Map.ofEntries(Map.entry("linux", ".so"), Map.entry("mac", ".dylib"), Map.entry("windows", ".dll"));
 
-    public static String loadLib(String name) throws IOException {
-        if (Objects.equals(OSUtils.getOsName(), "")) return "";
-        String libName = name + OSLIBEXTMAP.get(OSUtils.getOsName());
-        InputStream libStream = JNIUtils.class.getResourceAsStream("native/" + libName);
+    private static HashMap<String, String> libNames = new HashMap<>();
+    private static HashMap<String, Path> loadedLibs = new HashMap<>();
 
-        Path tempLib = Files.createTempFile(null, libName);
-        assert libStream != null;
-        Files.copy(libStream, tempLib, StandardCopyOption.REPLACE_EXISTING);
+    private static AtomicBoolean loadLock = new AtomicBoolean();
 
-        System.load(tempLib.toAbsolutePath().toString());
+    public static synchronized String loadLib(String name, Path rootPath) throws IOException {
+        try {
+            while (loadLock.get()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception ignored) {
 
-        return libName;
+                }
+            }
+            loadLock.set(true);
+            if (!loadedLibs.containsKey(name)) {
+                if (Objects.equals(OSUtils.getOS(), "")) return "";
+
+                libNames.put(name, name + OSLIBEXTMAP.get(OSUtils.getOsName()));
+                InputStream libStream = JNIUtils.class.getResourceAsStream(rootPath.toString() + "native/" + libNames.get(name));
+
+                Path tempLib = Files.createTempFile(null, libNames.get(name));
+
+                Files.copy(libStream, tempLib, StandardCopyOption.REPLACE_EXISTING);
+                loadedLibs.put(name, tempLib);
+            }
+
+            System.load(loadedLibs.get(libNames.get(name)).toAbsolutePath().toString());
+        } finally {
+            loadLock.set(false);
+        }
+        return libNames.get(name);
     }
 }
 

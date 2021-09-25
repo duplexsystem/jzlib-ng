@@ -28,8 +28,7 @@ package io.github.duplexsystem.jzlibng;
 import io.github.duplexsystem.jzlibng.utils.JNIUtils;
 
 import java.io.*;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
+import java.nio.file.Path;
 
 /**
  * drop in replacement for java.util.zip.Deflater
@@ -68,12 +67,16 @@ public class FastDeflater {
     public static final int SYNC_FLUSH = 2;
     public static final int FULL_FLUSH = 3;
 
-    static {
+    public static void initLibs(Path rootPath) {
         try {
-            JNIUtils.loadLib("libjzlibng");
-            initIDs(JNIUtils.loadLib("libz"));
-        } catch (Exception e) {
-            Interface.usingNatives = false;
+            JNIUtils.loadLib("libjzlibng", rootPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            initIDs(JNIUtils.loadLib("libz", rootPath));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

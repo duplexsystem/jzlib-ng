@@ -1,5 +1,7 @@
 package io.github.duplexsystem.jzlibng;
 
+import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
@@ -8,23 +10,29 @@ import java.util.zip.Inflater;
 public class Interface {
     public static boolean usingNatives = true;
 
-    public static Class getDeflater() {
-        if (usingNatives) return FastDeflater.class;
-        return Deflater.class;
+    public static Deflater newDeflater() {
+        if (usingNatives) return (Deflater) (Object) new FastDeflater();
+        return new Deflater();
     }
 
-    public static Class getInflater() {
-        if (usingNatives) return FastInflater.class;
-        return Inflater.class;
+    public static Inflater newInflator() {
+        if (usingNatives) return (Inflater) (Object) new FastInflater();
+        return new Inflater();
     }
 
-    public static Class getDeflaterOutputStream() {
-        if (usingNatives) return FastDeflaterOutputStream.class;
-        return DeflaterOutputStream.class;
+    public static Deflater newDeflater(int level, boolean nowrap) {
+        if (usingNatives) return (Deflater) (Object) new FastDeflater(level, nowrap);
+        return new Deflater(level, nowrap);
     }
 
-    public static Class getFastGZIPOutputStream() {
-        if (usingNatives) return FastGZIPOutputStream.class;
-        return GZIPOutputStream.class;
+    public static Inflater newInflator(boolean nowrap) {
+        if (usingNatives) return (Inflater) (Object) new FastInflater(nowrap);
+        return new Inflater(nowrap);
+    }
+
+    public static void init(Path rootPath) {
+        System.out.println(rootPath);
+        FastDeflater.initLibs(rootPath);
+        FastInflater.initLibs(rootPath);
     }
 }

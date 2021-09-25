@@ -3,6 +3,8 @@ package io.github.duplexsystem.jzlibng;
 
 import io.github.duplexsystem.jzlibng.utils.JNIUtils;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.zip.DataFormatException;
 
 /**
@@ -20,12 +22,16 @@ public class FastInflater {
 
     private static final byte[] defaultBuf = new byte[0];
 
-    static {
+    public static void initLibs(Path rootPath) {
         try {
-            JNIUtils.loadLib("libjzlibng");
-            initIDs(JNIUtils.loadLib("libz"));
-        } catch (Exception e) {
-            Interface.usingNatives = false;
+            JNIUtils.loadLib("libjzlibng", rootPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            initIDs(JNIUtils.loadLib("libz", rootPath));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
