@@ -25,6 +25,8 @@
 
 package io.github.duplexsystem.jzlibng;
 
+import io.github.duplexsystem.jzlibng.utils.JNIUtils;
+
 import java.io.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
@@ -67,20 +69,12 @@ public class FastDeflater {
     public static final int FULL_FLUSH = 3;
 
     static {
-        String libzName = System.getProperty("libz.name");
-        if(System.getProperty("os.name").toLowerCase().startsWith("mac")) {
-            System.load(System.getProperty("user.home") + "/.m2/repository/com/bluedevel/fastzlib-dylib/1.0-SNAPSHOT/fastzlib-dylib-1.0-SNAPSHOT.dylib");
-            if(libzName == null) {
-                libzName = "libz.dylib";
-            }
-        } else {
-            if(libzName == null) {
-                libzName = "libz.so";
-            }
-            System.load(System.getProperty("user.home") + "/fastzlib/fastzlib-so-1.0-SNAPSHOT.so");
+        try {
+            JNIUtils.loadLib("libjzlibng");
+            initIDs(JNIUtils.loadLib("libz"));
+        } catch (Exception e) {
+            Interface.usingNatives = false;
         }
-        System.out.println("loading libz from " + libzName);
-        initIDs(libzName);
     }
 
     public FastDeflater(int level, boolean nowrap) {
@@ -250,30 +244,4 @@ public class FastDeflater {
     private native static void reset(long addr);
     private native static void end(long addr);
 
-    public static void main(String[] args) throws Exception {
-        FileInputStream fis = new FileInputStream("/Users/kireet/ifconfig_0935.txt");
-        ByteArrayOutputStream input = new ByteArrayOutputStream();
-        byte[] buf = new byte[512];
-        int n;
-        while((n = fis.read(buf, 0, buf.length)) > 0) {
-            input.write(buf, 0, n);
-        }
-        fis.close();
-
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        FastDeflater def = new FastDeflater(DEFAULT_COMPRESSION, true);
-        FastDeflaterOutputStream ostream = new FastDeflaterOutputStream(bos, def);
-
-        ostream.write(input.toByteArray());
-        System.out.println(def.getBytesWritten());
-        ostream.close();
-        def.end();
-        InflaterInputStream is = new GZIPInputStream(new ByteArrayInputStream(bos.toByteArray()));
-        BufferedReader r = new BufferedReader(new InputStreamReader(is));
-        String line;
-        while((line = r.readLine()) != null) {
-            System.out.println("***: " + line);
-        }
-        r.close();
-    }
 }
