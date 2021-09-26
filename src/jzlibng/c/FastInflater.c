@@ -1,244 +1,304 @@
-#include <jni.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <zlib.h>
-#include <dlfcn.h>
-
-#define DEF_MEM_LEVEL 8
-#define GZIP_ENCODING 16
-
-/* A helper macro to dlsym the requisite dynamic symbol and bail-out on error. */
-#define LOAD_DYNAMIC_SYMBOL(func_ptr, env, handle, symbol) \
-  if ((func_ptr = do_dlsym(env, handle, symbol)) == NULL) { \
-    return; \
-  }
-
-static jfieldID levelID;
-static jfieldID strategyID;
-static jfieldID setParamsID;
-static jfieldID finishID;
-static jfieldID finishedID;
-static jfieldID bufID, offID, lenID;
-
-static int (*dlsym_deflateInit2_)(z_streamp, int, int, int, int, int, char*, int);
-static int (*dlsym_deflate)(z_streamp, int);
-static int (*dlsym_deflateSetDictionary)(z_streamp, const Bytef *, uInt);
-static int (*dlsym_deflateReset)(z_streamp);
-static int (*dlsym_deflateEnd)(z_streamp);
-static int (*dlsym_deflateParams)(z_streamp, int, int);
-static jint throwRuntimeException(JNIEnv *, char *);
-static jint throwException(JNIEnv *, char *, char *);
-
-
-/**
- * A helper function to dlsym a 'symbol' from a given library-handle.
+/*
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * @param env jni handle to report contingencies.
- * @param handle handle to the dlopen'ed library.
- * @param symbol symbol to load.
- * @return returns the address where the symbol is loaded in memory,
- *         <code>NULL</code> on error.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
-static void *do_dlsym(JNIEnv *env, void *handle, const char *symbol) {
-  if (!env || !handle || !symbol) {
-  	throwRuntimeException(env, "env error");
-  	return NULL;
-  }
-  char *error = NULL;
-  void *func_ptr = dlsym(handle, symbol);
-  if ((error = dlerror()) != NULL) {
-  	throwRuntimeException(env, "library not found");
-  	return NULL;
-  }
-  return func_ptr;
-}
-
-
-static jint throwRuntimeException(JNIEnv *env, char *message) {
-    jclass exClass;
-    return throwException(env, "java/lang/RuntimeException", message);
-}
-
-static jint throwException(JNIEnv *env, char *className, char *message) {
-    jclass exClass;
-    exClass = (*env)->FindClass( env, className);
-    return (*env)->ThrowNew( env, exClass, message );
-}
-
-JNIEXPORT void JNICALL Java_com_bluedevel_zlib_FastInflater_initIDs
-  (JNIEnv *env, jclass cls, jstring libname) {
-      const char *str = (*env)->GetStringUTFChars(env, libname, 0);
-      void *libz = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
-      (*env)->ReleaseStringUTFChars(env, libname, str);
-
-      if (!libz) {
-          throwRuntimeException(env, "Cannot load libz");
-          return;
-      }
-      if(dlerror() != NULL) {
-          throwRuntimeException(env, "Error loading load libz");
-      }
-
-      // load symbols dynamically, so as not to use the jvm-provided functions
-      LOAD_DYNAMIC_SYMBOL(dlsym_deflateInit2_, env, libz, "deflateInit2_");
-      LOAD_DYNAMIC_SYMBOL(dlsym_deflate, env, libz, "deflate");
-      LOAD_DYNAMIC_SYMBOL(dlsym_deflateParams, env, libz, "deflateParams");
-      LOAD_DYNAMIC_SYMBOL(dlsym_deflateSetDictionary, env, libz, "deflateSetDictionary");
-      LOAD_DYNAMIC_SYMBOL(dlsym_deflateReset, env, libz, "deflateReset");
-      LOAD_DYNAMIC_SYMBOL(dlsym_deflateParams, env, libz, "deflateParams");
-      LOAD_DYNAMIC_SYMBOL(dlsym_deflateEnd, env, libz, "deflateEnd");
-
-      levelID = (*env)->GetFieldID(env, cls, "level", "I");
-      strategyID = (*env)->GetFieldID(env, cls, "strategy", "I");
-      setParamsID = (*env)->GetFieldID(env, cls, "setParams", "Z");
-      finishID = (*env)->GetFieldID(env, cls, "finish", "Z");
-      finishedID = (*env)->GetFieldID(env, cls, "finished", "Z");
-      bufID = (*env)->GetFieldID(env, cls, "buf", "[B");
-      offID = (*env)->GetFieldID(env, cls, "off", "I");
-      lenID = (*env)->GetFieldID(env, cls, "len", "I");
-}
 
 /*
-JNIEXPORT jlong JNICALL Java_com_bluedevel_zlib_FastDeflater_init
-  (JNIEnv *env, jclass clazz, jint level, jint strategy, jboolean nowrap) {
+ * Native method support for java.util.zip.Inflater
+ */
+
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include "jni.h"
+#include <zlib.h>
+#include "Utils/JavaUtils.h"
+
+#include "FastInflater.h"
+
+#define ThrowDataFormatException(env, msg) \
+        JNU_ThrowByName(env, "java/util/zip/DataFormatException", msg)
+
+static jfieldID inputConsumedID;
+static jfieldID outputConsumedID;
+
+JNIEXPORT void JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_initIDs(JNIEnv *env, jclass cls)
+{
+    inputConsumedID = (*env)->GetFieldID(env, cls, "inputConsumed", "I");
+    outputConsumedID = (*env)->GetFieldID(env, cls, "outputConsumed", "I");
+    CHECK_NULL(inputConsumedID);
+    CHECK_NULL(outputConsumedID);
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_init(JNIEnv *env, jclass cls, jboolean nowrap)
+{
     z_stream *strm = calloc(1, sizeof(z_stream));
 
-    if (strm == 0) {
-        throwException(env, "java/lang/OutOfMemoryError", "calloc");
-        return 0;
+    if (strm == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return jlong_zero;
     } else {
-        int wbits = nowrap ? (MAX_WBITS | GZIP_ENCODING) : -MAX_WBITS;
-        switch (dlsym_deflateInit2_(strm, level, Z_DEFLATED,
-                             wbits,
-                             DEF_MEM_LEVEL, strategy,
-                             "1.2.8", sizeof(z_stream))) {
+        const char *msg;
+        int ret = inflateInit2(strm, nowrap ? -MAX_WBITS : MAX_WBITS);
+        switch (ret) {
           case Z_OK:
-            return (uintptr_t) strm;
+            return ptr_to_jlong(strm);
           case Z_MEM_ERROR:
             free(strm);
-            throwException(env, "java/lang/OutOfMemoryError", "free");
-            return 0;
-          case Z_STREAM_ERROR:
-            free(strm);
-            throwException(env, "java/lang/OutOfMemoryError", "z_stream free");
-            return 0;
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return jlong_zero;
           default:
+            msg = ((strm->msg != NULL) ? strm->msg :
+                   (ret == Z_VERSION_ERROR) ?
+                   "zlib returned Z_VERSION_ERROR: "
+                   "compile time and runtime zlib implementations differ" :
+                   (ret == Z_STREAM_ERROR) ?
+                   "inflateInit2 returned Z_STREAM_ERROR" :
+                   "unknown error initializing zlib library");
             free(strm);
-            throwRuntimeException(env, "unexpected value");
-            return 0;
+            JNU_ThrowInternalError(env, msg);
+            return jlong_zero;
         }
     }
-
-    // never get here
-    return 0;
 }
 
-JNIEXPORT void JNICALL Java_com_bluedevel_zlib_FastDeflater_setDictionary
-  (JNIEnv *env, jclass clazz, jlong addr, jbyteArray b, jint off, jint len) {
-      throwException(env, "java/lang/UnsupportedOperationException", "unsupported");
-  }
+static void checkSetDictionaryResult(JNIEnv *env, jlong addr, int res)
+{
+    switch (res) {
+    case Z_OK:
+        break;
+    case Z_STREAM_ERROR:
+    case Z_DATA_ERROR:
+        JNU_ThrowIllegalArgumentException(env, ((z_stream *)jlong_to_ptr(addr))->msg);
+        break;
+    default:
+        JNU_ThrowInternalError(env, ((z_stream *)jlong_to_ptr(addr))->msg);
+        break;
+    }
+}
 
-JNIEXPORT jint JNICALL Java_com_bluedevel_zlib_FastDeflater_deflateBytes
-  (JNIEnv *env, jobject this, jlong addr, jbyteArray b, jint off, jint len, jint flush) {
-        z_stream *strm = (uintptr_t) addr;
+JNIEXPORT void JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_setDictionary(JNIEnv *env, jclass cls, jlong addr,
+                                          jbyteArray b, jint off, jint len)
+{
+    jint res;
+    Bytef *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
+    if (buf == NULL) /* out of memory */
+        return;
+    res = inflateSetDictionary(jlong_to_ptr(addr), buf + off, len);
+    (*env)->ReleasePrimitiveArrayCritical(env, b, buf, 0);
+    checkSetDictionaryResult(env, addr, res);
+}
 
-    jarray this_buf = (*env)->GetObjectField(env, this, bufID);
-    jint this_off = (*env)->GetIntField(env, this, offID);
-    jint this_len = (*env)->GetIntField(env, this, lenID);
-    jbyte *in_buf;
-    jbyte *out_buf;
-    int res;
-    if ((*env)->GetBooleanField(env, this, setParamsID)) {
-        int level = (*env)->GetIntField(env, this, levelID);
-        int strategy = (*env)->GetIntField(env, this, strategyID);
-        in_buf = (*env)->GetPrimitiveArrayCritical(env, this_buf, 0);
-        if (in_buf == NULL) {
-            // Throw OOME only when length is not zero
-            if (this_len != 0)
-                return throwException(env, "java/lang/OutOfMemoryError", "can't access in_buf");
-        }
-        out_buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
-        if (out_buf == NULL) {
-            (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
-            if (len != 0)
-                return throwException(env, "java/lang/OutOfMemoryError", "can't access out_buf");
-        }
+JNIEXPORT void JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_setDictionaryBuffer(JNIEnv *env, jclass cls, jlong addr,
+                                          jlong bufferAddr, jint len)
+{
+    jint res;
+    Bytef *buf = jlong_to_ptr(bufferAddr);
+    res = inflateSetDictionary(jlong_to_ptr(addr), buf, len);
+    checkSetDictionaryResult(env, addr, res);
+}
 
-        strm->next_in = (Bytef *) (in_buf + this_off);
-        strm->next_out = (Bytef *) (out_buf + off);
-        strm->avail_in = this_len;
-        strm->avail_out = len;
-        res = dlsym_deflateParams(strm, level, strategy);
-        (*env)->ReleasePrimitiveArrayCritical(env, b, out_buf, 0);
-        (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
+static jint doInflate(jlong addr,
+                       jbyte *input, jint inputLen,
+                       jbyte *output, jint outputLen)
+{
+    jint ret;
+    z_stream *strm = jlong_to_ptr(addr);
 
-        switch (res) {
-        case Z_OK:
-            (*env)->SetBooleanField(env, this, setParamsID, JNI_FALSE);
-            this_off += this_len - strm->avail_in;
-            (*env)->SetIntField(env, this, offID, this_off);
-            (*env)->SetIntField(env, this, lenID, strm->avail_in);
-            return len - strm->avail_out;
-        case Z_BUF_ERROR:
-            (*env)->SetBooleanField(env, this, setParamsID, JNI_FALSE);
-            return 0;
-        default:
-            return throwException(env, "java/lang/InternalError", strm->msg);
-        }
+    strm->next_in  = (Bytef *) input;
+    strm->next_out = (Bytef *) output;
+    strm->avail_in  = inputLen;
+    strm->avail_out = outputLen;
+
+    ret = inflate(strm, Z_PARTIAL_FLUSH);
+    return ret;
+}
+
+static jlong checkInflateStatus(JNIEnv *env, jobject this, jlong addr,
+                        jint inputLen, jint outputLen, jint ret )
+{
+    z_stream *strm = jlong_to_ptr(addr);
+    jint inputUsed = 0, outputUsed = 0;
+    int finished = 0;
+    int needDict = 0;
+
+    switch (ret) {
+    case Z_STREAM_END:
+        finished = 1;
+        /* fall through */
+    case Z_OK:
+        inputUsed = inputLen - strm->avail_in;
+        outputUsed = outputLen - strm->avail_out;
+        break;
+    case Z_NEED_DICT:
+        needDict = 1;
+        /* Might have consumed some input here! */
+        inputUsed = inputLen - strm->avail_in;
+        /* zlib is unclear about whether output may be produced */
+        outputUsed = outputLen - strm->avail_out;
+        break;
+    case Z_BUF_ERROR:
+        break;
+    case Z_DATA_ERROR:
+        inputUsed = inputLen - strm->avail_in;
+        (*env)->SetIntField(env, this, inputConsumedID, inputUsed);
+        outputUsed = outputLen - strm->avail_out;
+        (*env)->SetIntField(env, this, outputConsumedID, outputUsed);
+        ThrowDataFormatException(env, strm->msg);
+        break;
+    case Z_MEM_ERROR:
+        JNU_ThrowOutOfMemoryError(env, 0);
+        break;
+    default:
+        JNU_ThrowInternalError(env, strm->msg);
+        break;
+    }
+    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | (((jlong)needDict) << 63);
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_inflateBytesBytes(JNIEnv *env, jobject this, jlong addr,
+                                         jbyteArray inputArray, jint inputOff, jint inputLen,
+                                         jbyteArray outputArray, jint outputOff, jint outputLen)
+{
+    jbyte *input = (*env)->GetPrimitiveArrayCritical(env, inputArray, 0);
+    jbyte *output;
+    jint ret;
+    jlong retVal;
+
+    if (input == NULL) {
+        if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+            JNU_ThrowOutOfMemoryError(env, 0);
+        return 0L;
+    }
+    output = (*env)->GetPrimitiveArrayCritical(env, outputArray, 0);
+    if (output == NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
+        if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+            JNU_ThrowOutOfMemoryError(env, 0);
+        return 0L;
+    }
+
+    ret = doInflate(addr, input + inputOff, inputLen, output + outputOff,
+                    outputLen);
+
+    (*env)->ReleasePrimitiveArrayCritical(env, outputArray, output, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
+
+    retVal = checkInflateStatus(env, this, addr, inputLen, outputLen, ret );
+    return retVal;
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_inflateBytesBuffer(JNIEnv *env, jobject this, jlong addr,
+                                         jbyteArray inputArray, jint inputOff, jint inputLen,
+                                         jlong outputBuffer, jint outputLen)
+{
+    jbyte *input = (*env)->GetPrimitiveArrayCritical(env, inputArray, 0);
+    jbyte *output;
+    jint ret;
+    jlong retVal;
+
+    if (input == NULL) {
+        if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+            JNU_ThrowOutOfMemoryError(env, 0);
+        return 0L;
+    }
+    output = jlong_to_ptr(outputBuffer);
+
+    ret = doInflate(addr, input + inputOff, inputLen, output, outputLen);
+
+    (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
+    retVal = checkInflateStatus(env, this, addr, inputLen, outputLen, ret );
+
+    return retVal;
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_inflateBufferBytes(JNIEnv *env, jobject this, jlong addr,
+                                         jlong inputBuffer, jint inputLen,
+                                         jbyteArray outputArray, jint outputOff, jint outputLen)
+{
+    jbyte *input = jlong_to_ptr(inputBuffer);
+    jbyte *output = (*env)->GetPrimitiveArrayCritical(env, outputArray, 0);
+    jint ret;
+    jlong retVal;
+
+    if (output == NULL) {
+        if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+            JNU_ThrowOutOfMemoryError(env, 0);
+        return 0L;
+    }
+
+    ret = doInflate(addr, input, inputLen, output  + outputOff, outputLen);
+
+    (*env)->ReleasePrimitiveArrayCritical(env, outputArray, output, 0);
+    retVal = checkInflateStatus(env, this, addr, inputLen, outputLen, ret );
+
+    return retVal;
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_inflateBufferBuffer(JNIEnv *env, jobject this, jlong addr,
+                                         jlong inputBuffer, jint inputLen,
+                                         jlong outputBuffer, jint outputLen)
+{
+    jbyte *input = jlong_to_ptr(inputBuffer);
+    jbyte *output = jlong_to_ptr(outputBuffer);
+    jint ret;
+    jlong retVal;
+
+    ret = doInflate(addr, input, inputLen, output, outputLen);
+    retVal = checkInflateStatus(env, this, addr, inputLen, outputLen, ret);
+    return retVal;
+}
+
+JNIEXPORT jint JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_getAdler(JNIEnv *env, jclass cls, jlong addr)
+{
+    return ((z_stream *)jlong_to_ptr(addr))->adler;
+}
+
+JNIEXPORT void JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_reset(JNIEnv *env, jclass cls, jlong addr)
+{
+    if (inflateReset(jlong_to_ptr(addr)) != Z_OK) {
+        JNU_ThrowInternalError(env, 0);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_io_github_duplexsystem_jzlibng_FastInflater_end(JNIEnv *env, jclass cls, jlong addr)
+{
+    if (inflateEnd(jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
+        JNU_ThrowInternalError(env, 0);
     } else {
-        jboolean finish = (*env)->GetBooleanField(env, this, finishID);
-        in_buf = (*env)->GetPrimitiveArrayCritical(env, this_buf, 0);
-        if (in_buf == NULL) {
-            if (this_len != 0)
-                return throwException(env, "java/lang/OutOfMemoryError", "in_buf null");
-        }
-        out_buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
-        if (out_buf == NULL) {
-            (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
-            if (len != 0)
-                return throwException(env, "java/lang/OutOfMemoryError", "out_buf null");
-        }
-
-        strm->next_in = (Bytef *) (in_buf + this_off);
-        strm->next_out = (Bytef *) (out_buf + off);
-        strm->avail_in = this_len;
-        strm->avail_out = len;
-        res = dlsym_deflate(strm, finish ? Z_FINISH : flush);
-        (*env)->ReleasePrimitiveArrayCritical(env, b, out_buf, 0);
-        (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
-
-        switch (res) {
-        case Z_STREAM_END:
-            (*env)->SetBooleanField(env, this, finishedID, JNI_TRUE);
-            // fall through
-        case Z_OK:
-            this_off += this_len - strm->avail_in;
-            (*env)->SetIntField(env, this, offID, this_off);
-            (*env)->SetIntField(env, this, lenID, strm->avail_in);
-            return len - strm->avail_out;
-        case Z_BUF_ERROR:
-            return 0;
-        default:
-            throwException(env, "java/lang/InternalError", strm->msg);
-            return 0;
-        }
+        free(jlong_to_ptr(addr));
     }
 }
-
-JNIEXPORT void JNICALL Java_com_bluedevel_zlib_FastDeflater_reset
-  (JNIEnv *env, jclass clazz, jlong addr) {
-    if (dlsym_deflateReset((z_stream *) addr) != Z_OK) {
-        throwException(env, "java/lang/InternalError", "reset error");
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_bluedevel_zlib_FastDeflater_end
-  (JNIEnv *env, jclass clazz, jlong addr) {
-    if (dlsym_deflateEnd((z_stream *) addr) == Z_STREAM_ERROR) {
-        throwException(env, "java/lang/InternalError", "end error");
-    } else {
-        free((z_stream *) (addr));
-    }
-  }
-*/

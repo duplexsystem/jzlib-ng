@@ -17,3 +17,6 @@ gradle-app.setting
 
 #do not commit native files
 src/main/resources/native
+
+#do not upload err logs
+hs_err_pid*.log

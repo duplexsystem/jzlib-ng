@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,34 @@
  * questions.
  */
 
-package io.github.duplexsystem.jzlibng;
+#ifndef JZLIB_NG_JAVAUTILS_H
+#define JZLIB_NG_JAVAUTILS_H
 
-/**
- * A reference to the native zlib's z_stream structure.
- *
- * Required to be imported directly since class is package protected.
- */
+#include <jni.h>
 
-class ZStreamRef {
+#define jlong_zero      ((jlong) 0)
 
-    private long address;
-    ZStreamRef (long address) {
-        this.address = address;
-    }
+#ifdef _LP64
+#ifndef jlong_to_ptr
+    #define jlong_to_ptr(a) ((void*)(a))
+  #endif
+  #ifndef ptr_to_jlong
+    #define ptr_to_jlong(a) ((jlong)(a))
+  #endif
+#else
+    #ifndef jlong_to_ptr
+        #define jlong_to_ptr(a) ((void*)(int)(a))
+    #endif
+    #ifndef ptr_to_jlong
+        #define ptr_to_jlong(a) ((jlong)(int)(a))
+    #endif
+#endif
 
-    long address() {
-        return address;
-    }
+#define CHECK_NULL(x)                           \
+    do {                                        \
+        if ((x) == NULL) {                      \
+            return;                             \
+        }                                       \
+    } while (0)                                 \
 
-    void clear() {
-        address = 0;
-    }
-}
+#endif //JZLIB_NG_JAVAUTILS_H
