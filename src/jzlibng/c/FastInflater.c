@@ -33,7 +33,7 @@
 #include <errno.h>
 #include <string.h>
 #include "jni.h"
-#include <zlib.h>
+#include "zlib.h"
 #include "Utils/JavaUtils.h"
 
 #include "FastInflater.h"

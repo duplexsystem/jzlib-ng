@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "jni.h"
-#include <zlib.h>
+#include "zlib.h"
 #include "Utils/JavaUtils.h"
 
 #include "FastDeflater.h"
