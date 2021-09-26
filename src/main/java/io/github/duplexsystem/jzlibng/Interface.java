@@ -12,26 +12,6 @@ public class Interface {
 
     public static ArrayList<Exception> errorList = new ArrayList<>();
 
-    public static Deflater newDeflater() {
-        if (usingNatives) return (Deflater) (Object) new FastDeflater();
-        return new Deflater();
-    }
-
-    public static Inflater newInflator() {
-        if (usingNatives) return (Inflater) (Object) new FastInflater();
-        return new Inflater();
-    }
-
-    public static Deflater newDeflater(int level, boolean nowrap) {
-        if (usingNatives) return (Deflater) (Object) new FastDeflater(level, nowrap);
-        return new Deflater(level, nowrap);
-    }
-
-    public static Inflater newInflator(boolean nowrap) {
-        if (usingNatives) return (Inflater) (Object) new FastInflater(nowrap);
-        return new Inflater(nowrap);
-    }
-
     public static void init(Path rootPath) {
         if (!usingNatives) return;
         FastInflater.initLibs(rootPath);
