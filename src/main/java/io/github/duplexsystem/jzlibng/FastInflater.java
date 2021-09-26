@@ -1,3 +1,4 @@
+package io.github.duplexsystem.jzlibng;
 /*
  * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -22,8 +23,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package io.github.duplexsystem.jzlibng;
 
 import io.github.duplexsystem.jzlibng.jvm.Preconditions;
 import io.github.duplexsystem.jzlibng.jvm.ZipUtils;
