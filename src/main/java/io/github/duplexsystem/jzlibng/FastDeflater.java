@@ -39,8 +39,6 @@ import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 
 /**

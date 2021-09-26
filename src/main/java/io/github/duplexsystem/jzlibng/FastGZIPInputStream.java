@@ -25,13 +25,10 @@ package io.github.duplexsystem.jzlibng;
  */
 
 
-import java.io.SequenceInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.FilterInputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.EOFException;
-import java.util.zip.*;
+import java.io.*;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.ZipException;
 
 /**
  * This class implements a stream filter for reading compressed data in

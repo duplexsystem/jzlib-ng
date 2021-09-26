@@ -40,8 +40,6 @@ import java.nio.ReadOnlyBufferException;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 /**
  * This class provides support for general purpose decompression using the

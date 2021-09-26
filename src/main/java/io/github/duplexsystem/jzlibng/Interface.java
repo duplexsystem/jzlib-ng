@@ -4,8 +4,6 @@ import io.github.duplexsystem.jzlibng.utils.UnsafeUtils;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 public class Interface {
     public static boolean usingNatives = true;

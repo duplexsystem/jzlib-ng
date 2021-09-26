@@ -24,9 +24,8 @@ package io.github.duplexsystem.jzlibng;/*
  */
 
 
-
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 
