@@ -120,7 +120,7 @@ public class FastInflater {
     public static void initLibs(Path rootPath) {
         try {
             JNIUtils.loadLib("jzlibng", rootPath);
-            JNIUtils.loadLib("z", rootPath);
+            Interface.initSymbols(JNIUtils.loadLib("z", rootPath));
             initIDs();
         } catch (IOException e) {
             Interface.error(e);

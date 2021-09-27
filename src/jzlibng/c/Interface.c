@@ -21,10 +21,10 @@ JNIEXPORT void JNICALL Java_io_github_duplexsystem_jzlibng_Interface_initSymbols
       (*env)->ReleaseStringUTFChars(env, libname, str);
 
       if (!cpufeat) {
-          JNU_ThrowRuntimeException(env, "Cannot load cpufeats");
+          JNU_ThrowRuntimeException(env, "Cannot load library");
           return;
       }
       if(dlerror() != NULL) {
-          JNU_ThrowRuntimeException(env, "Error loading load cpufeats");
+          JNU_ThrowRuntimeException(env, "Error loading load library");
       }
   }

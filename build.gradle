@@ -19,7 +19,7 @@ task compileHeaders() {
         exec {
             workingDir 'src/main/java'
 
-            commandLine 'javac', '-h', '../../jzlibng/c', 'io/github/duplexsystem/jzlibng/Interface.java', '-d', '/tmp'
+            commandLine 'javac', '-h', '../../jzlibng/c', 'io/github/duplexsystem/jzlibng/Interface.java', '-d', '/tmp', '-XDignore.symbol.file'
         }
     }
 }

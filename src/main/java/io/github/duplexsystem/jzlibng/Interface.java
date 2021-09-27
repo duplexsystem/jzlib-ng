@@ -42,11 +42,6 @@ public class Interface {
         }
     }
 
-    public static void main(String[] args) {
-        init(Path.of("/home/duplexsystem/jzlib-ng/src/main/resources"));
-        System.out.println(usingNatives);
-    }
-
     public static native boolean supportsExtensions();
     public static native void initSymbols(String libName);
 }
