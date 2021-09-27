@@ -24,7 +24,7 @@
  */
 
 /*
- * Native method support for java.util.zip.Deflater
+ * Native method support for io.github.duplexsystem.jzlibng.FastDeflater
  */
 
 #include <stdio.h>
@@ -44,7 +44,7 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_init(JNIEnv *env, jclass cls, j
     z_stream *strm = calloc(1, sizeof(z_stream));
 
     if (strm == 0) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return jlong_zero;
     } else {
         const char *msg;
@@ -56,11 +56,11 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_init(JNIEnv *env, jclass cls, j
             return ptr_to_jlong(strm);
           case Z_MEM_ERROR:
             free(strm);
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
             return jlong_zero;
           case Z_STREAM_ERROR:
             free(strm);
-            JNU_ThrowIllegalArgumentException(env, 0);
+            JNU_ThrowIllegalArgumentException(env, "Unspecified Error");
             return jlong_zero;
           default:
             msg = ((strm->msg != NULL) ? strm->msg :
@@ -88,7 +88,7 @@ static void checkSetDictionaryResult(JNIEnv *env, jlong addr, jint res)
     case Z_OK:
         break;
     case Z_STREAM_ERROR:
-        JNU_ThrowIllegalArgumentException(env, 0);
+        JNU_ThrowIllegalArgumentException(env, "Unspecified Error");
         break;
     default:
         throwInternalErrorHelper(env, strm, "unknown error in checkSetDictionaryResult");
@@ -197,14 +197,14 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_deflateBytesBytes(JNIEnv *env, 
 
     if (input == NULL) {
         if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return 0L;
     }
     output = (*env)->GetPrimitiveArrayCritical(env, outputArray, 0);
     if (output == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
         if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return 0L;
     }
 
@@ -231,7 +231,7 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_deflateBytesBuffer(JNIEnv *env,
     jint res;
     if (input == NULL) {
         if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return 0L;
     }
     output = jlong_to_ptr(outputBuffer);
@@ -257,7 +257,7 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_deflateBufferBytes(JNIEnv *env,
     jint res;
     if (output == NULL) {
         if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return 0L;
     }
 

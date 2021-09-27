@@ -41,7 +41,7 @@ task patchZlibNG() {
         exec {
             workingDir 'zlib-ng'
 
-            commandLine 'git', 'apply', '--ignore-whitespace', '../zlib-ng-patches/0001-jlibz-ng-changes.patch'
+            commandLine 'git', 'apply', '--ignore-whitespace', '../zlib-ng-patches/0001-jzlib-ng-changes.patch'
         }
     }
 }
@@ -78,6 +78,60 @@ task copyZlibNG() {
     }
 }
 
+task resetCPUFeatures() {
+    dependsOn compileHeaders
+    doLast {
+        exec {
+            workingDir 'cpu-features'
+
+            commandLine 'git', 'reset', '--hard', 'origin/master'
+        }
+    }
+}
+
+task patchCPUFeatures() {
+    dependsOn resetCPUFeatures
+    doLast {
+        exec {
+            workingDir 'cpu-features'
+
+            commandLine 'git', 'apply', '--ignore-whitespace', '../cpu-features-patches/0001-jzlib-ng-changes.patch'
+        }
+    }
+}
+
+task configCPUFeatures() {
+    dependsOn patchCPUFeatures
+    doLast {
+        exec {
+            workingDir 'cpu-features'
+
+            commandLine 'cmake', '.', '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_TESTING=OFF', '-DBUILD_SHARED_LIBS=ON'
+        }
+    }
+}
+
+task buildCPUFeatures() {
+    dependsOn configCPUFeatures
+    doLast {
+        exec {
+            workingDir 'cpu-features'
+
+            commandLine 'cmake', '--build', '.', '--config', 'Release'
+        }
+    }
+}
+
+task copyCPUFeatures() {
+    dependsOn buildCPUFeatures
+    doLast {
+        copy {
+            from 'cpu-features/bin'
+            into 'src/main/resources/native'
+        }
+    }
+}
+
 model {
     platforms {
         x64 {
@@ -92,28 +146,33 @@ model {
                     cCompiler.args '-I', "${org.gradle.internal.jvm.Jvm.current().javaHome}/include"
                     cCompiler.args '-I', "${org.gradle.internal.jvm.Jvm.current().javaHome}/include/darwin"
                     cCompiler.args '-I', "${project.rootDir.toString()}/zlib-ng"
+                    cCompiler.args '-I', "${project.rootDir.toString()}/cpu-features/include"
                     cCompiler.args '-mmacosx-version-min=10.4'
                     linker.args '-mmacosx-version-min=10.4'
                 } else if (targetPlatform.operatingSystem.linux) {
                     cCompiler.args '-I', "${org.gradle.internal.jvm.Jvm.current().javaHome}/include"
                     cCompiler.args '-I', "${org.gradle.internal.jvm.Jvm.current().javaHome}/include/linux"
                     cCompiler.args '-I', "${project.rootDir.toString()}/zlib-ng"
+                    cCompiler.args '-I', "${project.rootDir.toString()}/cpu-features/include"
                     cCompiler.args '-D_FILE_OFFSET_BITS=64 -fomit-frame-pointer -O2'
                 } else if (targetPlatform.operatingSystem.windows) {
                     cCompiler.args "-I${org.gradle.internal.jvm.Jvm.current().javaHome}/include"
                     cCompiler.args "-I${org.gradle.internal.jvm.Jvm.current().javaHome}/include/win32"
                     cCompiler.args '-I', "${project.rootDir.toString()}/zlib-ng"
+                    cCompiler.args '-I', "${project.rootDir.toString()}/cpu-features/include"
                     linker.args "Shlwapi.lib", "Advapi32.lib"
                 } else if (targetPlatform.operatingSystem.freeBSD) {
                     cCompiler.args '-I', "${org.gradle.internal.jvm.Jvm.current().javaHome}/include"
                     cCompiler.args '-I', "${org.gradle.internal.jvm.Jvm.current().javaHome}/include/freebsd"
                     cCompiler.args '-I', "${project.rootDir.toString()}/zlib-ng"
+                    cCompiler.args '-I', "${project.rootDir.toString()}/cpu-features/include"
                 }
             }
         }
     }
 }
 
+processResources.dependsOn 'copyCPUFeatures'
 processResources.dependsOn 'copyZlibNG'
 copyZlibNG.dependsOn 'jzlibngSharedLibrary'
 copyZlibNG.doLast{

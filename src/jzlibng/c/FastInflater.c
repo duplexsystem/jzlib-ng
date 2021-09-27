@@ -24,7 +24,7 @@
  */
 
 /*
- * Native method support for java.util.zip.Inflater
+ * Native method support for io.github.duplexsystem.jzlibng.FastInflater
  */
 
 #include <stddef.h>
@@ -59,7 +59,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_init(JNIEnv *env, jclass cls, j
     z_stream *strm = calloc(1, sizeof(z_stream));
 
     if (strm == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return jlong_zero;
     } else {
         const char *msg;
@@ -69,7 +69,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_init(JNIEnv *env, jclass cls, j
             return ptr_to_jlong(strm);
           case Z_MEM_ERROR:
             free(strm);
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
             return jlong_zero;
           default:
             msg = ((strm->msg != NULL) ? strm->msg :
@@ -173,7 +173,7 @@ static jlong checkInflateStatus(JNIEnv *env, jobject this, jlong addr,
         ThrowDataFormatException(env, strm->msg);
         break;
     case Z_MEM_ERROR:
-        JNU_ThrowOutOfMemoryError(env, 0);
+        JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         break;
     default:
         JNU_ThrowInternalError(env, strm->msg);
@@ -194,14 +194,14 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_inflateBytesBytes(JNIEnv *env, 
 
     if (input == NULL) {
         if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return 0L;
     }
     output = (*env)->GetPrimitiveArrayCritical(env, outputArray, 0);
     if (output == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
         if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return 0L;
     }
 
@@ -227,7 +227,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_inflateBytesBuffer(JNIEnv *env,
 
     if (input == NULL) {
         if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return 0L;
     }
     output = jlong_to_ptr(outputBuffer);
@@ -252,7 +252,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_inflateBufferBytes(JNIEnv *env,
 
     if (output == NULL) {
         if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
-            JNU_ThrowOutOfMemoryError(env, 0);
+            JNU_ThrowOutOfMemoryError(env, "Unspecified Error");
         return 0L;
     }
 
@@ -289,7 +289,7 @@ JNIEXPORT void JNICALL
 Java_io_github_duplexsystem_jzlibng_FastInflater_reset(JNIEnv *env, jclass cls, jlong addr)
 {
     if (inflateReset(jlong_to_ptr(addr)) != Z_OK) {
-        JNU_ThrowInternalError(env, 0);
+        JNU_ThrowInternalError(env, "Unspecified Error");
     }
 }
 
@@ -297,7 +297,7 @@ JNIEXPORT void JNICALL
 Java_io_github_duplexsystem_jzlibng_FastInflater_end(JNIEnv *env, jclass cls, jlong addr)
 {
     if (inflateEnd(jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
-        JNU_ThrowInternalError(env, 0);
+        JNU_ThrowInternalError(env, "Unspecified Error");
     } else {
         free(jlong_to_ptr(addr));
     }

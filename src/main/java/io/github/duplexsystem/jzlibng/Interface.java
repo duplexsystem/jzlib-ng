@@ -1,5 +1,6 @@
 package io.github.duplexsystem.jzlibng;
 
+import io.github.duplexsystem.jzlibng.utils.JNIUtils;
 import io.github.duplexsystem.jzlibng.utils.UnsafeUtils;
 
 import java.nio.file.Path;
@@ -11,14 +12,24 @@ public class Interface {
     public static ArrayList<Exception> errorList = new ArrayList<>();
 
     public static void init(Path rootPath) {
-        if (!usingNatives) return;
-        FastInflater.initLibs(rootPath);
-        FastDeflater.initLibs(rootPath);
+        try {
+            JNIUtils.loadLib("jzlibng", rootPath);
+            initSymbols(JNIUtils.loadLib("cpu_features", rootPath));
+            if (!supportsExtensions()) {
+                usingNatives = false;
+                return;
+            }
+            if (!usingNatives) return;
+            FastInflater.initLibs(rootPath);
+            FastDeflater.initLibs(rootPath);
+        } catch (Exception e) {
+            usingNatives = false;
+            error(e);
+        }
     }
 
     public static void error(Exception e) {
         try {
-            e.printStackTrace();
             usingNatives = false;
             if (errorList.size() >= 2) {
                 errorList.get(0).printStackTrace();
@@ -30,4 +41,12 @@ public class Interface {
             error.printStackTrace();
         }
     }
+
+    public static void main(String[] args) {
+        init(Path.of("/home/duplexsystem/jzlib-ng/src/main/resources"));
+        System.out.println(usingNatives);
+    }
+
+    public static native boolean supportsExtensions();
+    public static native void initSymbols(String libName);
 }
