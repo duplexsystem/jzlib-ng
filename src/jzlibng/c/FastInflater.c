@@ -36,7 +36,7 @@
 #include "zlib.h"
 #include "Utils/JavaUtils.h"
 
-#include "FastInflater.h"
+#include "io_github_duplexsystem_jzlibng_FastInflater.h"
 
 #define ThrowDataFormatException(env, msg) \
         JNU_ThrowByName(env, "java/util/zip/DataFormatException", msg)

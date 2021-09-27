@@ -33,7 +33,7 @@
 #include "zlib.h"
 #include "Utils/JavaUtils.h"
 
-#include "FastDeflater.h"
+#include "io_github_duplexsystem_jzlibng_FastDeflater.h"
 
 #define DEF_MEM_LEVEL 8
 

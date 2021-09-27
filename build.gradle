@@ -14,7 +14,18 @@ dependencies {
 
 }
 
+task compileHeaders() {
+    doLast {
+        exec {
+            workingDir 'src/main/java'
+
+            commandLine 'javac', '-h', '../../jzlibng/c', 'io/github/duplexsystem/jzlibng/Interface.java', '-d', '/tmp'
+        }
+    }
+}
+
 task resetZlibNG() {
+    dependsOn compileHeaders
     doLast {
         exec {
             workingDir 'zlib-ng'

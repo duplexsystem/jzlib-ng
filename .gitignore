@@ -20,3 +20,6 @@ src/main/resources/native
 
 #do not upload err logs
 hs_err_pid*.log
+
+#no gened headers
+io_github_duplexsystem_jzlibng_*.h
