@@ -918,6 +918,7 @@ public class FastDeflater {
     private static native int getAdler(long addr);
     private static native void reset(long addr);
     private static native void end(long addr);
+    public static native void initSymbols(String libName);
 
     /**
      * A reference to the native zlib's z_stream structure. It also

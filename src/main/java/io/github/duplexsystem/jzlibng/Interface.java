@@ -3,7 +3,6 @@ package io.github.duplexsystem.jzlibng;
 import io.github.duplexsystem.jzlibng.utils.JNIUtils;
 import io.github.duplexsystem.jzlibng.utils.UnsafeUtils;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
@@ -16,11 +15,13 @@ public class Interface {
         try {
             if (!usingNatives) return;
             JNIUtils.loadLib("jzlibng", rootPath);
-            initSymbols(JNIUtils.loadLib("cpu_features", rootPath), false);
+            initSymbols(JNIUtils.loadLib("cpu_features", rootPath));
             if (!supportsExtensions()) usingNatives = false;
             if (!usingNatives) return;
             JNIUtils.loadLib("jzlibng", rootPath);
-            Interface.initSymbols(JNIUtils.loadLib("z", rootPath), true);
+            String libname = JNIUtils.loadLib("z", rootPath);
+            FastDeflater.initSymbols(libname);
+            FastInflater.initSymbols(libname);
             FastInflater.initIDs();
         } catch (Exception e) {
             error(e);
@@ -43,5 +44,5 @@ public class Interface {
     }
 
     public static native boolean supportsExtensions();
-    public static native void initSymbols(String libName, boolean isLibZ);
+    public static native void initSymbols(String libName);
 }

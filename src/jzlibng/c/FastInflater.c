@@ -34,10 +34,16 @@
 #include <string.h>
 #include "jni.h"
 #include "zlib.h"
-#include "Utils/DynamicPointers.h"
+#include "Utils/ApacheUtils.h"
 #include "Utils/JavaUtils.h"
 
 #include "io_github_duplexsystem_jzlibng_FastInflater.h"
+
+static int (*dlsym_inflateInit2_)(z_stream *, int, char*, int);
+static int (*dlsym_inflate)(z_stream *, int);
+static int (*dlsym_inflateSetDictionary)(z_stream *, const unsigned char *, unsigned int);
+static int (*dlsym_inflateReset)(z_stream *);
+static int (*dlsym_inflateEnd)(z_stream *);
 
 #define ThrowDataFormatException(env, msg) \
         JNU_ThrowByName(env, "java/util/zip/DataFormatException", msg)
@@ -302,4 +308,25 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_end(JNIEnv *env, jclass cls, jl
     } else {
         free(jlong_to_ptr(addr));
     }
+}
+
+JNIEXPORT void JNICALL Java_io_github_duplexsystem_jzlibng_FastInflater_initSymbols
+  (JNIEnv *env, jclass cls, jstring libname)
+{
+      const char *str = (*env)->GetStringUTFChars(env, libname, 0);
+      void *lib = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
+      (*env)->ReleaseStringUTFChars(env, libname, str);
+
+      if (!lib) {
+            JNU_ThrowRuntimeException(env, "Cannot load library");
+            return;
+      }
+      if(dlerror() != NULL) {
+            JNU_ThrowRuntimeException(env, "Error loading load library");
+      }
+      LOAD_DYNAMIC_SYMBOL(dlsym_inflateInit2_, env, lib, "inflateInit2_");
+      LOAD_DYNAMIC_SYMBOL(dlsym_inflate, env, lib, "inflate");
+      LOAD_DYNAMIC_SYMBOL(dlsym_inflateSetDictionary, env, lib, "inflateSetDictionary");
+      LOAD_DYNAMIC_SYMBOL(dlsym_inflateReset, env, lib, "inflateReset");
+      LOAD_DYNAMIC_SYMBOL(dlsym_inflateEnd, env, lib, "inflateEnd");
 }

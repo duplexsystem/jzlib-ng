@@ -31,10 +31,17 @@
 #include <stdlib.h>
 #include "jni.h"
 #include "zlib.h"
-#include "Utils/DynamicPointers.h"
+#include "Utils/ApacheUtils.h"
 #include "Utils/JavaUtils.h"
 
 #include "io_github_duplexsystem_jzlibng_FastDeflater.h"
+
+static int (*dlsym_deflateInit2_)(z_stream *, int, int, int, int, int, char*, int);
+static int (*dlsym_deflate)(z_stream *, int);
+static int (*dlsym_deflateSetDictionary)(z_stream *, const unsigned char *, unsigned int);
+static int (*dlsym_deflateReset)(z_stream *);
+static int (*dlsym_deflateEnd)(z_stream *);
+static int (*dlsym_deflateParams)(z_stream *, int, int);
 
 #define DEF_MEM_LEVEL 8
 
@@ -308,4 +315,27 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_end(JNIEnv *env, jclass cls, jl
     } else {
         free((z_stream *)jlong_to_ptr(addr));
     }
+}
+
+JNIEXPORT void JNICALL Java_io_github_duplexsystem_jzlibng_FastDeflater_initSymbols
+  (JNIEnv *env, jclass cls, jstring libname)
+{
+      const char *str = (*env)->GetStringUTFChars(env, libname, 0);
+      void *lib = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
+      (*env)->ReleaseStringUTFChars(env, libname, str);
+
+      if (!lib) {
+            JNU_ThrowRuntimeException(env, "Cannot load library");
+            return;
+      }
+      if(dlerror() != NULL) {
+            JNU_ThrowRuntimeException(env, "Error loading load library");
+      }
+
+      LOAD_DYNAMIC_SYMBOL(dlsym_deflateInit2_, env, lib, "deflateInit2_");
+      LOAD_DYNAMIC_SYMBOL(dlsym_deflate, env, lib, "deflate");
+      LOAD_DYNAMIC_SYMBOL(dlsym_deflateSetDictionary, env, lib, "deflateSetDictionary");
+      LOAD_DYNAMIC_SYMBOL(dlsym_deflateReset, env, lib, "deflateReset");
+      LOAD_DYNAMIC_SYMBOL(dlsym_deflateEnd, env, lib, "deflateEnd");
+      LOAD_DYNAMIC_SYMBOL(dlsym_deflateParams, env, lib, "deflateParams");
 }

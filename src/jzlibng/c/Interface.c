@@ -6,13 +6,10 @@
 #include "cpuinfo_x86.h"
 #include "zlib.h"
 #include "Utils/ApacheUtils.h"
-#include "Utils/DynamicPointers.h"
 
 #include "io_github_duplexsystem_jzlibng_Interface.h"
 
-static jint throwRuntimeException(JNIEnv *, char *);
-static jint throwException(JNIEnv *, char *, char *);
-
+static int (*dlsym_deflateInit2_)(z_stream *, int, int, int, int, int, char*, int);
 
 JNIEXPORT jboolean JNICALL Java_io_github_duplexsystem_jzlibng_Interface_supportsExtensions
         (JNIEnv *env, jclass cls) {
@@ -21,7 +18,7 @@ JNIEXPORT jboolean JNICALL Java_io_github_duplexsystem_jzlibng_Interface_support
 }
 
 JNIEXPORT void JNICALL Java_io_github_duplexsystem_jzlibng_Interface_initSymbols
-  (JNIEnv *env, jclass cls, jstring libname, jboolean islibz) {
+  (JNIEnv *env, jclass cls, jstring libname) {
       const char *str = (*env)->GetStringUTFChars(env, libname, 0);
       void *lib = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
       (*env)->ReleaseStringUTFChars(env, libname, str);
@@ -32,20 +29,5 @@ JNIEXPORT void JNICALL Java_io_github_duplexsystem_jzlibng_Interface_initSymbols
       }
       if(dlerror() != NULL) {
             JNU_ThrowRuntimeException(env, "Error loading load library");
-      }
-
-      if(islibz) {
-            LOAD_DYNAMIC_SYMBOL(dlsym_deflateInit2_, env, lib, "deflateInit2_");
-            LOAD_DYNAMIC_SYMBOL(dlsym_deflate, env, lib, "deflate");
-            LOAD_DYNAMIC_SYMBOL(dlsym_deflateSetDictionary, env, lib, "deflateSetDictionary");
-            LOAD_DYNAMIC_SYMBOL(dlsym_deflateReset, env, lib, "deflateReset");
-            LOAD_DYNAMIC_SYMBOL(dlsym_deflateEnd, env, lib, "deflateEnd");
-            LOAD_DYNAMIC_SYMBOL(dlsym_deflateParams, env, lib, "deflateParams");
-
-            LOAD_DYNAMIC_SYMBOL(dlsym_inflateInit2_, env, lib, "inflateInit2_");
-            LOAD_DYNAMIC_SYMBOL(dlsym_inflate, env, lib, "inflate");
-            LOAD_DYNAMIC_SYMBOL(dlsym_inflateSetDictionary, env, lib, "inflateSetDictionary");
-            LOAD_DYNAMIC_SYMBOL(dlsym_inflateReset, env, lib, "inflateReset");
-            LOAD_DYNAMIC_SYMBOL(dlsym_inflateEnd, env, lib, "inflateEnd");
       }
   }
