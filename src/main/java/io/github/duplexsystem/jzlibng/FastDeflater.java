@@ -189,15 +189,6 @@ public class FastDeflater {
      */
     private static final int FINISH = 4;
 
-    public static void initLibs(Path rootPath) {
-        try {
-            JNIUtils.loadLib("jzlibng", rootPath);
-            Interface.initSymbols(JNIUtils.loadLib("z", rootPath));
-        } catch (IOException e) {
-            Interface.error(e);
-        }
-    }
-
     /**
      * Creates a new compressor using the specified compression level.
      * If 'nowrap' is true then the ZLIB header and checksum fields will

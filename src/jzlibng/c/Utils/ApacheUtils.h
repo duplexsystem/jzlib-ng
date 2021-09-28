@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 #include "jni.h"
 
 #ifndef JZLIB_NG_SYMBOLUTILS_H

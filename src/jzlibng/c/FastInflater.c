@@ -34,6 +34,7 @@
 #include <string.h>
 #include "jni.h"
 #include "zlib.h"
+#include "Utils/DynamicPointers.h"
 #include "Utils/JavaUtils.h"
 
 #include "io_github_duplexsystem_jzlibng_FastInflater.h"
@@ -63,7 +64,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_init(JNIEnv *env, jclass cls, j
         return jlong_zero;
     } else {
         const char *msg;
-        int ret = inflateInit2(strm, nowrap ? -MAX_WBITS : MAX_WBITS);
+        int ret = dlsym_inflateInit2_(strm, nowrap ? -MAX_WBITS : MAX_WBITS, ZLIB_VERSION, (int)sizeof(z_stream));
         switch (ret) {
           case Z_OK:
             return ptr_to_jlong(strm);
@@ -109,7 +110,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_setDictionary(JNIEnv *env, jcla
     Bytef *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
     if (buf == NULL) /* out of memory */
         return;
-    res = inflateSetDictionary(jlong_to_ptr(addr), buf + off, len);
+    res = dlsym_dinflateSetDictionary(jlong_to_ptr(addr), buf + off, len);
     (*env)->ReleasePrimitiveArrayCritical(env, b, buf, 0);
     checkSetDictionaryResult(env, addr, res);
 }
@@ -120,7 +121,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_setDictionaryBuffer(JNIEnv *env
 {
     jint res;
     Bytef *buf = jlong_to_ptr(bufferAddr);
-    res = inflateSetDictionary(jlong_to_ptr(addr), buf, len);
+    res = dlsym_dinflateSetDictionary(jlong_to_ptr(addr), buf, len);
     checkSetDictionaryResult(env, addr, res);
 }
 
@@ -136,7 +137,7 @@ static jint doInflate(jlong addr,
     strm->avail_in  = inputLen;
     strm->avail_out = outputLen;
 
-    ret = inflate(strm, Z_PARTIAL_FLUSH);
+    ret = dlsym_inflate(strm, Z_PARTIAL_FLUSH);
     return ret;
 }
 
@@ -288,7 +289,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_getAdler(JNIEnv *env, jclass cl
 JNIEXPORT void JNICALL
 Java_io_github_duplexsystem_jzlibng_FastInflater_reset(JNIEnv *env, jclass cls, jlong addr)
 {
-    if (inflateReset(jlong_to_ptr(addr)) != Z_OK) {
+    if (dlsym_inflateReset(jlong_to_ptr(addr)) != Z_OK) {
         JNU_ThrowInternalError(env, "Unspecified Error");
     }
 }
@@ -296,7 +297,7 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_reset(JNIEnv *env, jclass cls, 
 JNIEXPORT void JNICALL
 Java_io_github_duplexsystem_jzlibng_FastInflater_end(JNIEnv *env, jclass cls, jlong addr)
 {
-    if (inflateEnd(jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
+    if (dlsym_inflateEnd(jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
         JNU_ThrowInternalError(env, "Unspecified Error");
     } else {
         free(jlong_to_ptr(addr));

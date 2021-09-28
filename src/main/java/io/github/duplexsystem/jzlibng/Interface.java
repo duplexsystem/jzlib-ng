@@ -3,6 +3,7 @@ package io.github.duplexsystem.jzlibng;
 import io.github.duplexsystem.jzlibng.utils.JNIUtils;
 import io.github.duplexsystem.jzlibng.utils.UnsafeUtils;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
@@ -13,23 +14,22 @@ public class Interface {
 
     public static void init(Path rootPath) {
         try {
-            JNIUtils.loadLib("jzlibng", rootPath);
-            initSymbols(JNIUtils.loadLib("cpu_features", rootPath));
-            if (!supportsExtensions()) {
-                usingNatives = false;
-                return;
-            }
             if (!usingNatives) return;
-            FastInflater.initLibs(rootPath);
-            FastDeflater.initLibs(rootPath);
+            JNIUtils.loadLib("jzlibng", rootPath);
+            initSymbols(JNIUtils.loadLib("cpu_features", rootPath), false);
+            if (!supportsExtensions()) usingNatives = false;
+            if (!usingNatives) return;
+            JNIUtils.loadLib("jzlibng", rootPath);
+            Interface.initSymbols(JNIUtils.loadLib("z", rootPath), true);
+            FastInflater.initIDs();
         } catch (Exception e) {
-            usingNatives = false;
             error(e);
         }
     }
 
     public static void error(Exception e) {
         try {
+            e.printStackTrace();
             usingNatives = false;
             if (errorList.size() >= 2) {
                 errorList.get(0).printStackTrace();
@@ -43,5 +43,5 @@ public class Interface {
     }
 
     public static native boolean supportsExtensions();
-    public static native void initSymbols(String libName);
+    public static native void initSymbols(String libName, boolean isLibZ);
 }

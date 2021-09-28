@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include "jni.h"
 #include "zlib.h"
+#include "Utils/DynamicPointers.h"
 #include "Utils/JavaUtils.h"
 
 #include "io_github_duplexsystem_jzlibng_FastDeflater.h"
@@ -48,9 +49,9 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_init(JNIEnv *env, jclass cls, j
         return jlong_zero;
     } else {
         const char *msg;
-        int ret = deflateInit2(strm, level, Z_DEFLATED,
+        int ret = dlsym_deflateInit2_(strm, level, Z_DEFLATED,
                                nowrap ? -MAX_WBITS : MAX_WBITS,
-                               DEF_MEM_LEVEL, strategy);
+                               DEF_MEM_LEVEL, strategy, ZLIB_VERSION, (int)sizeof(z_stream));
         switch (ret) {
           case Z_OK:
             return ptr_to_jlong(strm);
@@ -104,7 +105,7 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_setDictionary(JNIEnv *env, jcla
     Bytef *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
     if (buf == NULL) /* out of memory */
         return;
-    res = deflateSetDictionary(jlong_to_ptr(addr), buf + off, len);
+    res = dlsym_deflateSetDictionary(jlong_to_ptr(addr), buf + off, len);
     (*env)->ReleasePrimitiveArrayCritical(env, b, buf, 0);
     checkSetDictionaryResult(env, addr, res);
 }
@@ -115,7 +116,7 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_setDictionaryBuffer(JNIEnv *env
 {
     int res;
     Bytef *buf = jlong_to_ptr(bufferAddr);
-    res = deflateSetDictionary(jlong_to_ptr(addr), buf, len);
+    res = dlsym_deflateSetDictionary(jlong_to_ptr(addr), buf, len);
     checkSetDictionaryResult(env, addr, res);
 }
 
@@ -136,9 +137,9 @@ static jint doDeflate(JNIEnv *env, jlong addr,
     if (setParams) {
         int strategy = (params >> 1) & 3;
         int level = params >> 3;
-        res = deflateParams(strm, level, strategy);
+        res = dlsym_deflateParams(strm, level, strategy);
     } else {
-        res = deflate(strm, flush);
+        res = dlsym_deflate(strm, flush);
     }
     return res;
 }
@@ -294,7 +295,7 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_getAdler(JNIEnv *env, jclass cl
 JNIEXPORT void JNICALL
 Java_io_github_duplexsystem_jzlibng_FastDeflater_reset(JNIEnv *env, jclass cls, jlong addr)
 {
-    if (deflateReset((z_stream *)jlong_to_ptr(addr)) != Z_OK) {
+    if (dlsym_deflateReset((z_stream *)jlong_to_ptr(addr)) != Z_OK) {
         JNU_ThrowInternalError(env, "deflateReset failed");
     }
 }
@@ -302,7 +303,7 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_reset(JNIEnv *env, jclass cls, 
 JNIEXPORT void JNICALL
 Java_io_github_duplexsystem_jzlibng_FastDeflater_end(JNIEnv *env, jclass cls, jlong addr)
 {
-    if (deflateEnd((z_stream *)jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
+    if (dlsym_deflateEnd((z_stream *)jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
         JNU_ThrowInternalError(env, "deflateEnd failed");
     } else {
         free((z_stream *)jlong_to_ptr(addr));

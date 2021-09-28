@@ -117,16 +117,6 @@ public class FastInflater {
     private int inputConsumed;
     private int outputConsumed;
 
-    public static void initLibs(Path rootPath) {
-        try {
-            JNIUtils.loadLib("jzlibng", rootPath);
-            Interface.initSymbols(JNIUtils.loadLib("z", rootPath));
-            initIDs();
-        } catch (IOException e) {
-            Interface.error(e);
-        }
-    }
-
     /**
      * Creates a new decompressor. If the parameter 'nowrap' is true then
      * the ZLIB header and checksum fields will not be used. This provides
@@ -719,7 +709,7 @@ public class FastInflater {
             throw new NullPointerException("Inflater has been closed");
     }
 
-    private static native void initIDs();
+    static native void initIDs();
     private static native long init(boolean nowrap);
     private static native void setDictionary(long addr, byte[] b, int off,
                                              int len);
