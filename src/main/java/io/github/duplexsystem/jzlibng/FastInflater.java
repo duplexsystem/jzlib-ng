@@ -26,17 +26,14 @@ package io.github.duplexsystem.jzlibng;
 
 import io.github.duplexsystem.jzlibng.jvm.Preconditions;
 import io.github.duplexsystem.jzlibng.jvm.ZipUtils;
-import io.github.duplexsystem.jzlibng.utils.JNIUtils;
 import io.github.duplexsystem.jzlibng.utils.ReflectionUtils;
 import io.github.duplexsystem.jzlibng.utils.UnsafeUtils;
 
-import java.io.IOException;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
-import java.nio.file.Path;
 import java.util.Objects;
 import java.util.zip.DataFormatException;
 

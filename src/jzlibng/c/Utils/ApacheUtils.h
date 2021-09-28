@@ -39,6 +39,22 @@ static void *do_dlsym(JNIEnv *env, void *handle, const char *symbol) {
     return func_ptr;
 }
 
+static void *loadLib(JNIEnv *env, jstring libname) {
+      const char *str = (*env)->GetStringUTFChars(env, libname, 0);
+      void *lib = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
+      (*env)->ReleaseStringUTFChars(env, libname, str);
+
+      if (!lib) {
+            JNU_ThrowRuntimeException(env, "Cannot load library");
+            return;
+      }
+      if(dlerror() != NULL) {
+            JNU_ThrowRuntimeException(env, "Error loading load library");
+      }
+
+      return lib;
+}
+
 static jint JNU_ThrowRuntimeException(JNIEnv *env, char *message) {
     jclass exClass;
     return JNU_ThrowException(env, "java/lang/RuntimeException", message);

@@ -320,17 +320,7 @@ Java_io_github_duplexsystem_jzlibng_FastDeflater_end(JNIEnv *env, jclass cls, jl
 JNIEXPORT void JNICALL Java_io_github_duplexsystem_jzlibng_FastDeflater_initSymbols
   (JNIEnv *env, jclass cls, jstring libname)
 {
-      const char *str = (*env)->GetStringUTFChars(env, libname, 0);
-      void *lib = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
-      (*env)->ReleaseStringUTFChars(env, libname, str);
-
-      if (!lib) {
-            JNU_ThrowRuntimeException(env, "Cannot load library");
-            return;
-      }
-      if(dlerror() != NULL) {
-            JNU_ThrowRuntimeException(env, "Error loading load library");
-      }
+      void *lib = loadLib(env, libname);
 
       LOAD_DYNAMIC_SYMBOL(dlsym_deflateInit2_, env, lib, "deflateInit2_");
       LOAD_DYNAMIC_SYMBOL(dlsym_deflate, env, lib, "deflate");

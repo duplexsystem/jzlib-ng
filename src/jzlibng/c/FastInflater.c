@@ -313,17 +313,8 @@ Java_io_github_duplexsystem_jzlibng_FastInflater_end(JNIEnv *env, jclass cls, jl
 JNIEXPORT void JNICALL Java_io_github_duplexsystem_jzlibng_FastInflater_initSymbols
   (JNIEnv *env, jclass cls, jstring libname)
 {
-      const char *str = (*env)->GetStringUTFChars(env, libname, 0);
-      void *lib = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
-      (*env)->ReleaseStringUTFChars(env, libname, str);
+      void *lib = loadLib(env, libname);
 
-      if (!lib) {
-            JNU_ThrowRuntimeException(env, "Cannot load library");
-            return;
-      }
-      if(dlerror() != NULL) {
-            JNU_ThrowRuntimeException(env, "Error loading load library");
-      }
       LOAD_DYNAMIC_SYMBOL(dlsym_inflateInit2_, env, lib, "inflateInit2_");
       LOAD_DYNAMIC_SYMBOL(dlsym_inflate, env, lib, "inflate");
       LOAD_DYNAMIC_SYMBOL(dlsym_inflateSetDictionary, env, lib, "inflateSetDictionary");

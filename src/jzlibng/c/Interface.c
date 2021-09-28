@@ -19,15 +19,5 @@ JNIEXPORT jboolean JNICALL Java_io_github_duplexsystem_jzlibng_Interface_support
 
 JNIEXPORT void JNICALL Java_io_github_duplexsystem_jzlibng_Interface_initSymbols
   (JNIEnv *env, jclass cls, jstring libname) {
-      const char *str = (*env)->GetStringUTFChars(env, libname, 0);
-      void *lib = dlopen(str, RTLD_LAZY | RTLD_GLOBAL);
-      (*env)->ReleaseStringUTFChars(env, libname, str);
-
-      if (!lib) {
-            JNU_ThrowRuntimeException(env, "Cannot load library");
-            return;
-      }
-      if(dlerror() != NULL) {
-            JNU_ThrowRuntimeException(env, "Error loading load library");
-      }
+      void *lib = loadLib(env, libname);
   }
