@@ -19,7 +19,7 @@ task compileHeaders() {
         exec {
             workingDir 'src/main/java'
 
-            commandLine 'javac', '-h', '../../jzlibng/c', 'io/github/duplexsystem/jzlibng/Interface.java', '-d', '/tmp', '-XDignore.symbol.file'
+            commandLine 'javac', '-h', '../../jzlibng/c', 'io/github/duplexsystem/jzlibng/Interface.java', '-d', '/tmp', '-XDignore.symbol.file', '--add-exports', 'java.base/jdk.internal.vm.annotation=ALL-UNNAMED'
         }
     }
 }
@@ -189,6 +189,7 @@ if (hasProperty('buildScan')) {
     }
 }
 
-test {
-    useJUnitPlatform()
+tasks.withType(JavaCompile) {
+    options.compilerArgs.addAll(new ArrayList<String>((
+            Arrays.asList("--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED"))))
 }

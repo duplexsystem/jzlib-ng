@@ -41,7 +41,7 @@ public class FastGZIPOutputStream extends FastDeflaterOutputStream {
     /**
      * CRC-32 of uncompressed data.
      */
-    protected CRC32 crc = new CRC32();
+    protected FastCRC32 crc = new FastCRC32();
 
     /*
      * GZIP header magic number.

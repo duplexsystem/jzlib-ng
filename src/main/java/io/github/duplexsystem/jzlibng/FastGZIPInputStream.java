@@ -43,7 +43,7 @@ public class FastGZIPInputStream extends FastInflaterInputStream {
     /**
      * CRC-32 for uncompressed data.
      */
-    protected CRC32 crc = new CRC32();
+    protected FastCRC32 crc = new FastCRC32();
 
     /**
      * Indicates end of input stream.

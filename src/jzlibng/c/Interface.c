@@ -9,8 +9,6 @@
 
 #include "io_github_duplexsystem_jzlibng_Interface.h"
 
-static int (*dlsym_deflateInit2_)(z_stream *, int, int, int, int, int, char*, int);
-
 JNIEXPORT jboolean JNICALL Java_io_github_duplexsystem_jzlibng_Interface_supportsExtensions
         (JNIEnv *env, jclass cls) {
     X86Features features = GetX86Info().features;

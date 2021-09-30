@@ -22,6 +22,7 @@ public class Interface {
             String libname = JNIUtils.loadLib("z", rootPath);
             FastDeflater.initSymbols(libname);
             FastInflater.initSymbols(libname);
+            FastCRC32.initSymbols(libname);
             FastInflater.initIDs();
         } catch (Exception e) {
             error(e);

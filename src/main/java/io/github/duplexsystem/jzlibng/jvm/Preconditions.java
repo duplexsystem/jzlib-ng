@@ -25,6 +25,8 @@ package io.github.duplexsystem.jzlibng.jvm;
  * questions.
  */
 
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -110,5 +112,20 @@ public class Preconditions {
             default:
                 return String.format("Range check failed: %s %s", checkKind, args);
         }
+    }
+
+    @IntrinsicCandidate
+    public static <X extends RuntimeException>
+    int checkIndex(int index, int length,
+                   BiFunction<String, List<Number>, X> oobef) {
+        if (index < 0 || index >= length)
+            throw outOfBoundsCheckIndex(oobef, index, length);
+        return index;
+    }
+
+    private static RuntimeException outOfBoundsCheckIndex(
+            BiFunction<String, List<Number>, ? extends RuntimeException> oobe,
+            int index, int length) {
+        return outOfBounds(oobe, "checkIndex", index, length);
     }
 }
